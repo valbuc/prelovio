@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prelovium - Second Hand Store Management</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%E2%9D%A4%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-800">Prelovium</h1>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-white shadow-lg mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-center space-x-8">
+                <div class="flex items-center space-x-8">
+                    <p class="text-gray-600">© 2025 Prelovium. All rights reserved.</p>
+                </div>
+                <span class="text-gray-600">•</span>
+                <div class="flex items-center space-x-8">
+                    <p class="text-gray-600">Valentin Buchner</p>
+                </div>
+                <span class="text-gray-600">•</span>
+                <div class="flex items-center space-x-4">
+                    <p class="text-gray-600">If you are curious, reach out:</p>
+                    <a href="https://valbuc.github.io" target="_blank" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-globe text-xl"></i>
+                    </a>
+                    <a href="#" data-email-link class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-envelope text-xl"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/valentin-buchner/" target="_blank" class="text-gray-600 hover:text-gray-900">
+                        <i class="fab fa-linkedin text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function setupEmailLinks() {
+            // Split email into parts to make it harder to scrape
+            const parts = ['vlbuchner', '@', 'gmail.com'];
+            const email = parts.join('');
+            
+            // Update all email links
+            const emailLinks = document.querySelectorAll('[data-email-link]');
+            emailLinks.forEach(link => {
+                link.href = `mailto:${email}?subject=Prelovio`;
+            });
+        }
+
+        // Run when the document is ready
+        document.addEventListener('DOMContentLoaded', setupEmailLinks);
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 
