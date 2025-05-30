@@ -17,12 +17,12 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/prelovium'
       - '--region'
-      - 'us-central1'
+      - 'europe-west1'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
       - '--memory'
-      - '1Gi'
+      - '4Gi'
 
 images:
   - 'gcr.io/$PROJECT_ID/prelovium' 

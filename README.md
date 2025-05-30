@@ -21,6 +21,8 @@ This project uses Poetry for dependency management and Flask for the web applica
 
 ### Setup
 
+## Local Deployment
+
 1. Install Poetry
 2. Install dependencies:
    ```bash
@@ -37,7 +39,7 @@ This project uses Poetry for dependency management and Flask for the web applica
    poetry run python app.py
    ```
 
-## Deployment
+## GCP Deployment
 
 The application is configured to deploy to Google Cloud Run. To deploy:
 

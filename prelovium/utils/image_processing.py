@@ -3,6 +3,8 @@ import numpy as np
 from PIL import Image
 from transformers import pipeline
 import matplotlib.pyplot as plt
+import tempfile
+import os
 
 BLUR_AMOUNT = 32  # blor of shadow
 OFFSET_X = -25  # Horizontal offset for the shadow
@@ -20,15 +22,18 @@ pipe = pipeline("image-segmentation", model="briaai/RMBG-1.4", trust_remote_code
 def remove_background(image_path):
     """using hf model for background removal"""
     pillow_image = pipe(image_path)
-    pillow_image.save("temp/transparent.png", "PNG")
-    pillow_image
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+        pillow_image.save(temp_file.name, "PNG")
+    return pillow_image
 
 
 def trim_and_pad_image(image, padding_ratio=0.1, vertical_ratio=1.333):
     """removing edges without content and adding regular padding"""
     bbox = image.getbbox()
     trimmed_image = image.crop(bbox)
-    trimmed_image.save("temp/transparent_trimmed.png", "PNG")
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+        trimmed_image.save(temp_file.name, "PNG")
 
     # add padding
     width, height = trimmed_image.size
@@ -39,7 +44,8 @@ def trim_and_pad_image(image, padding_ratio=0.1, vertical_ratio=1.333):
     padded_image = Image.new("RGBA", (padded_width, padded_height), (0, 0, 0, 0))
     padded_image.paste(trimmed_image, (padding_width, padding_height))
 
-    padded_image.save("temp/transparent_padded.png", "PNG")
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+        padded_image.save(temp_file.name, "PNG")
 
     # expand to target ratio
     if padded_height < padded_width * vertical_ratio:
@@ -58,7 +64,8 @@ def trim_and_pad_image(image, padding_ratio=0.1, vertical_ratio=1.333):
     )
 
     # Save the result
-    final_image.save("temp/transparent_padded_formated.png", "PNG")
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+        final_image.save(temp_file.name, "PNG")
     return final_image
 
 

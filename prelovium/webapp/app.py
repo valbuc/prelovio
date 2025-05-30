@@ -8,7 +8,7 @@ from prelovium.utils.image_processing import prettify, save_image, load_image
 from prelovium.utils.metadata import generate_metadata
 
 app = Flask(__name__)
-app.config["UPLOAD_FOLDER"] = "temp/uploads"
+app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(__file__), "temp", "uploads")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max file size
 
 # Example items
@@ -18,6 +18,8 @@ EXAMPLES = ["jacket", "shirt", "jeans", "shoes", "boots", "pants", "suit", "jump
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "examples")
 
 
 def allowed_file(filename):
@@ -35,7 +37,7 @@ def example_image(item_type, image_type):
         return jsonify({"error": "Invalid example request"}), 400
 
     # Serve from the new location
-    example_dir = os.path.join(os.path.dirname(__file__), "examples", item_type)
+    example_dir = os.path.join(EXAMPLES_DIR, item_type)
     filename = f"{image_type}.jpeg"
     return send_from_directory(example_dir, filename)
 
@@ -49,10 +51,10 @@ def process_images():
             return jsonify({"error": "Invalid example request"}), 400
 
         example_type = data["example"]
-        example_folder = os.path.join("examples", example_type)
+        example_folder = os.path.join(EXAMPLES_DIR, example_type)
+        primary_path = os.path.join(example_folder, "primary.jpeg")
 
         # Process example images
-        primary_path = os.path.join(example_folder, "primary.jpeg")
         secondary_path = os.path.join(example_folder, "secondary.jpeg")
         label_path = os.path.join(example_folder, "label.jpeg")
 
@@ -103,7 +105,10 @@ def process_images():
         return jsonify({"error": "No selected files"}), 400
 
     if not all([allowed_file(f.filename) for f in [primary, secondary, label]]):
-        return jsonify({"error": "Invalid file type"}), 400
+        return (
+            jsonify({"error": f"Invalid file type, Please use .png, .jpg or .jpeg"}),
+            400,
+        )
 
     # Create a unique folder for this upload
     upload_id = secure_filename(
@@ -152,4 +157,4 @@ def uploaded_file(filename):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
