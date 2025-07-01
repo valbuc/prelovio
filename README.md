@@ -65,7 +65,7 @@ Run `make help` to see all available commands:
 
 1. **Set up GCP project**:
    ```bash
-   make setup-gcp PROJECT_ID=your-project-id
+   make setup-gcp PROJECT_ID=prelovio
    ```
 
 2. **Configure Terraform**:
@@ -106,7 +106,7 @@ Run `make help` to see all available commands:
 For manual deployment to Google Cloud Run:
 
 ```bash
-make deploy PROJECT_ID=your-project-id
+make deploy PROJECT_ID=prelovio
 ```
 
 ## Project Structure
