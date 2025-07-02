@@ -1,3 +1,4 @@
-project_id  = "prelovio"
+# Replace with your actual project ID from: gcloud projects list
+project_id  = "YOUR_ACTUAL_PROJECT_ID"  # e.g., "prelovio" or "prelovio-123456"
 region      = "europe-west1"
 environment = "prod"
