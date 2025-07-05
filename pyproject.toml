@@ -24,6 +24,9 @@ gradio = "^4.31.5"
 flask = "^3.1.1"
 gunicorn = "^21.2.0"
 dotenv = "^0.9.9"
+flask-sqlalchemy = "^3.1.1"
+google-cloud-storage = "^2.10.0"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.0.0"
