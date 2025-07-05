@@ -18,7 +18,7 @@ Before deploying, ensure you have:
 
 ```bash
 # Set your project ID
-export PROJECT_ID="prelovio"
+export PROJECT_ID="prelovium"
 
 # Set the project
 gcloud config set project $PROJECT_ID
@@ -27,7 +27,7 @@ gcloud config set project $PROJECT_ID
 # This must be done via the GCP Console
 
 # Run the automated setup
-make setup-gcp PROJECT_ID=prelovio
+make setup-gcp PROJECT_ID=prelovium
 ```
 
 ### 2. Terraform Configuration
@@ -45,7 +45,7 @@ nano terraform.tfvars
 
 Example `terraform.tfvars`:
 ```hcl
-project_id  = "prelovio"
+project_id  = "prelovium"
 region      = "europe-west1"
 environment = "prod"
 ```
@@ -105,7 +105,7 @@ If you prefer to deploy manually instead of using GitHub Actions:
 
 ```bash
 # Deploy directly to Cloud Run
-make deploy PROJECT_ID=prelovio
+make deploy PROJECT_ID=prelovium
 ```
 
 ## Local Development
@@ -180,7 +180,7 @@ gcloud run services add-iam-policy-binding prelovium \
 # ...
 
 # Deploy manually
-make deploy PROJECT_ID=prelovio
+make deploy PROJECT_ID=prelovium
 ```
 
 ## Infrastructure Updates

@@ -2,10 +2,6 @@
 .git
 .gitignore
 
-# Documentation
-README.md
-*.md
-
 # CI/CD
 .github/
 cloudbuild.yaml

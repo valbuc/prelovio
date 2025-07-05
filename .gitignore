@@ -1,5 +1,6 @@
 # custom
 temp/
+poetry.lock
 
 
 # Python

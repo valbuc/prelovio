@@ -67,7 +67,7 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/prelovium/prelovium:${{ github.sha }} .
+        docker build --platform linux/amd64 -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/prelovium/prelovium:${{ github.sha }} .
         docker tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/prelovium/prelovium:${{ github.sha }} ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/prelovium/prelovium:latest
 
     - name: Push Docker image
@@ -82,7 +82,7 @@ jobs:
           --region ${{ env.REGION }} \
           --platform managed \
           --allow-unauthenticated \
-          --memory 4Gi \
+          --memory 2Gi \
           --cpu 2 \
           --set-env-vars "FLASK_APP=prelovium.webapp.app:app,FLASK_ENV=production,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}"
 
