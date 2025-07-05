@@ -100,7 +100,7 @@ resource "google_cloud_run_v2_service" "prelovium" {
 }
 
 # Make service publicly accessible
-resource "google_cloud_run_service_iam_policy" "prelovium_public" {
+resource "google_cloud_run_v2_service_iam_policy" "prelovium_public" {
   location = google_cloud_run_v2_service.prelovium.location
   project  = google_cloud_run_v2_service.prelovium.project
   service  = google_cloud_run_v2_service.prelovium.name
