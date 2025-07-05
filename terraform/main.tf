@@ -103,7 +103,7 @@ resource "google_cloud_run_v2_service" "prelovium" {
 resource "google_cloud_run_v2_service_iam_policy" "prelovium_public" {
   location = google_cloud_run_v2_service.prelovium.location
   project  = google_cloud_run_v2_service.prelovium.project
-  service  = google_cloud_run_v2_service.prelovium.name
+  name     = google_cloud_run_v2_service.prelovium.name
 
   policy_data = data.google_iam_policy.public_access.policy_data
 }
