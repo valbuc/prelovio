@@ -1,69 +1,197 @@
 # Prelovium
 
-A startup idea I had a while ago and tinkered on a bit. This is a prototype of a web application where a user can upload just 3 images of a pre-loved fashion item, and the images are automatically enhanced to look professional (this might motivate potential buyers), and an online ad is automatically generated. The idea would be that this online ad is then automatically published on all available online marketplaces, such that it reaches the widest range of possible buyers.
+A web application for image processing and analysis using Flask and OpenCV.
 
-## Features
+## Architecture
 
-- Enhances images, segments items and puts them in front of a neutral background.
-- Generates online ad: suggests title, price, description, material, color, size, etc.
-- And I got plenty ideas for more features :) 
+- **Backend**: Flask web application with image processing capabilities
+- **Infrastructure**: Google Cloud Run with Terraform for infrastructure as code
+- **CI/CD**: GitHub Actions for automated deployment
+- **Container Registry**: Google Artifact Registry
+- **Development**: Poetry for Python dependency management
 
-## Development
+## Prerequisites
 
-This project uses Poetry for dependency management and Flask for the web application.
+- Python 3.11+
+- Poetry
+- Docker
+- Google Cloud SDK (`gcloud`)
+- Terraform (for infrastructure management)
 
-### Prerequisites
-
-1. Python 3.11 or higher
-2. Poetry
-3. Google Cloud account with Vertex AI API enabled
-4. Google Cloud credentials set up locally
+## Local Development
 
 ### Setup
 
-## Local Deployment
-
-1. Install Poetry
-2. Install dependencies:
+1. **Install dependencies**:
    ```bash
-   poetry install
-   ```
-3. Create a `.env` file based on `.env.example`:
-   ```bash
-   cp .env.example .env
-   ```
-4. Update the `.env` file with your Google Cloud project ID
-5. Run the development server:
-   ```bash
-   cd prelovium/webapp 
-   poetry run python app.py
+   make install
    ```
 
-## GCP Deployment
-
-The application is configured to deploy to Google Cloud Run. To deploy:
-
-1. Make sure you have the Google Cloud CLI installed and configured
-2. Run:
+2. **Run the application locally**:
    ```bash
-   gcloud builds submit --config cloudbuild.yaml
+   make run
    ```
-3. Run:
-   ```bash
-   gcloud beta run services add-iam-policy-binding --region=us-central1 --member=allUsers --role=roles/run.invoker prelovium
-   ```
-   to make the service public.
 
-The application will be deployed to a public URL in the format: `https://prelovium-xxxxx-uc.a.run.app`
+3. **Run with Docker locally**:
+   ```bash
+   make deploy-local
+   ```
+
+4. **Development mode with hot reload**:
+   ```bash
+   make dev
+   ```
+
+### Available Make Commands
+
+Run `make help` to see all available commands:
+
+- `make install` - Install dependencies using Poetry
+- `make test` - Run tests
+- `make build` - Build Docker image locally
+- `make run` - Run the application locally
+- `make run-docker` - Run the application in Docker locally
+- `make deploy-local` - Deploy to local Docker
+- `make dev` - Start development environment with hot reload
+- `make deploy` - Deploy to Google Cloud Run
+- `make clean` - Clean up local Docker images and containers
+- `make lint` - Run linting tools
+- `make format` - Format code
+- `make check` - Check code quality
+
+## Cloud Deployment
+
+### Initial Setup
+
+1. **Set up GCP project**:
+   ```bash
+   make setup-gcp PROJECT_ID=prelovium
+   ```
+
+2. **Configure Terraform**:
+   ```bash
+   cd terraform
+   cp terraform.tfvars.example terraform.tfvars
+   # Edit terraform.tfvars with your project details
+   ```
+
+3. **Initialize and apply Terraform**:
+   ```bash
+   make terraform-init
+   make terraform-plan
+   make terraform-apply
+   ```
+
+### GitHub Actions Setup
+
+1. **Set up GitHub repository secrets**:
+   - `GCP_PROJECT_ID`: Your Google Cloud project ID
+   - `GCP_SA_KEY`: Service account key JSON (base64 encoded)
+
+2. **Get the service account key** (after running Terraform):
+   ```bash
+   cd terraform
+   terraform output -raw github_actions_service_account_key | base64 -d > sa-key.json
+   ```
+
+3. **Base64 encode the service account key**:
+   ```bash
+   base64 -i sa-key.json
+   ```
+
+4. **Add the base64 encoded key to GitHub secrets** as `GCP_SA_KEY`
+
+### Manual Deployment
+
+For manual deployment to Google Cloud Run:
+
+```bash
+make deploy PROJECT_ID=prelovium
+```
+
+## Project Structure
+
+```
+prelovium/
+├── .github/workflows/     # GitHub Actions workflows
+├── terraform/            # Terraform infrastructure code
+├── prelovium/           # Main application code
+│   ├── utils/           # Utility modules
+│   └── webapp/          # Flask web application
+├── Dockerfile           # Container configuration
+├── Makefile            # Build and deployment commands
+├── pyproject.toml      # Python project configuration
+└── README.md           # This file
+```
+
+## Infrastructure
+
+The application is deployed on Google Cloud Platform using:
+
+- **Cloud Run**: Serverless container platform
+- **Artifact Registry**: Container image storage
+- **Terraform**: Infrastructure as Code
+- **GitHub Actions**: CI/CD pipeline
+
+### Terraform Resources
+
+- Google Cloud Run service
+- Artifact Registry repository
+- IAM service accounts and bindings
+- Required API enablement
+
+## Development Workflow
+
+1. **Create a feature branch**:
+   ```bash
+   git checkout -b feature/your-feature
+   ```
+
+2. **Make changes and test locally**:
+   ```bash
+   make dev
+   ```
+
+3. **Format and lint code**:
+   ```bash
+   make format
+   make check
+   ```
+
+4. **Commit and push**:
+   ```bash
+   git add .
+   git commit -m "Add your feature"
+   git push origin feature/your-feature
+   ```
+
+5. **Create pull request** - GitHub Actions will run tests
+
+6. **Merge to main** - Automatic deployment to production
+
+## API Endpoints
+
+- `GET /` - Main application interface
+- `POST /process` - Process uploaded images
+- `GET /examples/<item_type>/<image_type>` - Serve example images
+- `GET /uploads/<filename>` - Serve processed images
 
 ## Environment Variables
 
-- `GOOGLE_CLOUD_PROJECT`: Your Google Cloud project ID
-- `FLASK_APP`: Flask application entry point
-- `FLASK_ENV`: Flask environment (development/production)
-- `FLASK_DEBUG`: Enable/disable Flask debug mode
-- `PORT`: Port to run the application on
+- `PORT` - Server port (default: 8080)
+- `FLASK_APP` - Flask application entry point
+- `FLASK_ENV` - Flask environment (development/production)
+- `GOOGLE_CLOUD_PROJECT` - GCP project ID
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Run linting and tests
+6. Submit a pull request
 
 ## License
 
-This project is open source and available under the Apache 2.0 License License. If you stumble over this or use it, I would be really happy to hear your feedback and ideas! 
+This project is licensed under the MIT License. 
