@@ -39,4 +39,4 @@ ENV GOOGLE_CLOUD_PROJECT=prelovium
 EXPOSE 8080
 
 # Run the application with proper binding
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 prelovium.webapp.app:app"] 
+CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 prelovium.webapp.app:app"] 
