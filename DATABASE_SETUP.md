@@ -5,11 +5,76 @@ This guide will help you set up the database and Google Cloud Storage integratio
 ## Prerequisites
 
 1. **Google Cloud Project**: You need a Google Cloud Project with billing enabled
-2. **Google Cloud Storage**: A bucket for storing images
-3. **Google Cloud Vertex AI**: Enabled for metadata generation
-4. **Service Account**: A service account with appropriate permissions
+2. **Terraform**: Installed and configured for Google Cloud
+3. **Google Cloud CLI**: For authentication and local development
 
-## Google Cloud Setup
+## Infrastructure Setup with Terraform
+
+### 1. Authentication Setup
+
+```bash
+# Authenticate with Google Cloud
+gcloud auth login
+gcloud auth application-default login
+
+# Set your project
+gcloud config set project YOUR_PROJECT_ID
+```
+
+### 2. Configure Terraform Variables
+
+Copy the example terraform variables:
+```bash
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+```
+
+Edit `terraform.tfvars` with your project information:
+```hcl
+project_id  = "your-actual-project-id"
+region      = "europe-west1"  # or your preferred region
+environment = "prod"
+database_url = "sqlite:///prelovium.db"  # or PostgreSQL for production
+```
+
+### 3. Deploy Infrastructure
+
+```bash
+# Initialize Terraform
+terraform init
+
+# Plan the deployment
+terraform plan
+
+# Apply the infrastructure
+terraform apply
+```
+
+This will automatically create:
+- **Google Cloud Storage bucket** for image storage
+- **Service account** with appropriate permissions
+- **Secret Manager** secrets for service account keys
+- **Cloud Run service** with proper configuration
+- **Required APIs** enabled
+- **IAM bindings** for security
+
+### 4. Get Infrastructure Outputs
+
+After successful deployment, get the important values:
+```bash
+# Get bucket name
+terraform output gcs_bucket_name
+
+# Get service account email
+terraform output prelovium_app_service_account_email
+
+# Get service URL
+terraform output service_url
+```
+
+## Manual Setup (Alternative)
+
+If you prefer manual setup instead of Terraform:
 
 ### 1. Create a Google Cloud Storage Bucket
 
@@ -48,22 +113,47 @@ gcloud iam service-accounts keys create prelovium-key.json \
 # Enable required Google Cloud APIs
 gcloud services enable storage.googleapis.com
 gcloud services enable aiplatform.googleapis.com
+gcloud services enable secretmanager.googleapis.com
 ```
 
-## Environment Configuration
+## Local Development Setup
 
-1. **Copy the example environment file**:
-   ```bash
-   cp .env.example .env
-   ```
+### 1. Environment Configuration
 
-2. **Update the environment variables**:
-   ```env
-   GOOGLE_CLOUD_PROJECT=your-actual-project-id
-   GOOGLE_APPLICATION_CREDENTIALS=path/to/prelovium-key.json
-   GCS_BUCKET_NAME=prelovium-images-your-unique-name
-   DATABASE_URL=sqlite:///prelovium.db
-   ```
+Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+If you used **Terraform deployment**, get the values from outputs:
+```bash
+cd terraform
+echo "GOOGLE_CLOUD_PROJECT=$(terraform output -raw project_id)" >> ../.env
+echo "GCS_BUCKET_NAME=$(terraform output -raw gcs_bucket_name)" >> ../.env
+echo "DATABASE_URL=sqlite:///prelovium.db" >> ../.env
+```
+
+If you used **manual setup**, update the environment variables:
+```env
+GOOGLE_CLOUD_PROJECT=your-actual-project-id
+GOOGLE_APPLICATION_CREDENTIALS=path/to/prelovium-key.json
+GCS_BUCKET_NAME=prelovium-images-your-unique-name
+DATABASE_URL=sqlite:///prelovium.db
+```
+
+### 2. Get Service Account Key for Local Development
+
+If you used Terraform:
+```bash
+# Get the service account key from Terraform outputs
+cd terraform
+terraform output -raw prelovium_app_service_account_key | base64 -d > ../prelovium-key.json
+
+# Add to .env file
+echo "GOOGLE_APPLICATION_CREDENTIALS=prelovium-key.json" >> ../.env
+```
+
+If you used manual setup, you already have the key file from the gcloud command.
 
 ## Database Setup
 

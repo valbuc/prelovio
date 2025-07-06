@@ -1,10 +1,21 @@
 # Prelovium
 
-A web application for image processing and analysis using Flask and OpenCV.
+A web application for image processing and analysis using Flask and OpenCV, with database storage and Google Cloud Storage integration.
+
+## Features
+
+- 🖼️ **Image Processing**: AI-powered background removal and enhancement
+- 🤖 **AI Metadata Generation**: Automatic product descriptions using Google Vertex AI
+- 💾 **Database Storage**: SQLAlchemy-based storage for upload history and metadata
+- ☁️ **Cloud Storage**: Google Cloud Storage for scalable image storage
+- 📱 **Modern UI**: Responsive web interface with upload history
+- 🔐 **Secure**: Service account-based authentication with Secret Manager
 
 ## Architecture
 
-- **Backend**: Flask web application with image processing capabilities
+- **Backend**: Flask web application with SQLAlchemy database
+- **Storage**: Google Cloud Storage for images, database for metadata
+- **AI/ML**: Google Vertex AI for metadata generation
 - **Infrastructure**: Google Cloud Run with Terraform for infrastructure as code
 - **CI/CD**: GitHub Actions for automated deployment
 - **Container Registry**: Google Artifact Registry
@@ -61,11 +72,15 @@ Run `make help` to see all available commands:
 
 ## Cloud Deployment
 
-### Initial Setup
+### Automated Infrastructure Setup (Recommended)
 
-1. **Set up GCP project**:
+The easiest way to deploy is using the included Terraform configuration:
+
+1. **Prerequisites**:
    ```bash
-   make setup-gcp PROJECT_ID=prelovium
+   # Install Terraform and authenticate with Google Cloud
+   gcloud auth login
+   gcloud auth application-default login
    ```
 
 2. **Configure Terraform**:
@@ -75,12 +90,26 @@ Run `make help` to see all available commands:
    # Edit terraform.tfvars with your project details
    ```
 
-3. **Initialize and apply Terraform**:
+3. **Deploy everything**:
    ```bash
-   make terraform-init
-   make terraform-plan
-   make terraform-apply
+   terraform init
+   terraform plan
+   terraform apply
    ```
+
+This automatically creates:
+- ✅ Google Cloud Storage bucket for images
+- ✅ Service account with proper permissions
+- ✅ Cloud Run service with environment variables
+- ✅ Secret Manager for secure credential storage
+- ✅ Database configuration
+- ✅ All required APIs enabled
+
+📖 **For detailed setup instructions, see [TERRAFORM_DEPLOYMENT.md](TERRAFORM_DEPLOYMENT.md)**
+
+### Manual Setup (Alternative)
+
+For manual infrastructure setup, see [DATABASE_SETUP.md](DATABASE_SETUP.md)
 
 ### GitHub Actions Setup
 
@@ -171,17 +200,39 @@ The application is deployed on Google Cloud Platform using:
 
 ## API Endpoints
 
-- `GET /` - Main application interface
-- `POST /process` - Process uploaded images
+### Web Interface
+- `GET /` - Main application interface for image upload
+- `GET /history` - View all previous uploads and generated ads
+- `POST /process` - Process uploaded images and generate metadata
+
+### API Endpoints
+- `GET /api/uploads` - Get all uploads as JSON
+- `GET /api/uploads/<upload_id>` - Get specific upload details
 - `GET /examples/<item_type>/<image_type>` - Serve example images
-- `GET /uploads/<filename>` - Serve processed images
+- `GET /uploads/<filename>` - Serve processed images (legacy support)
+
+### New Features
+- **Upload History**: View all previous uploads in a beautiful grid layout
+- **Detailed View**: Click on any upload to see full details in a modal
+- **Cloud Storage**: All images automatically uploaded to Google Cloud Storage
+- **Database Integration**: Upload metadata and AI-generated ads stored in database
 
 ## Environment Variables
 
+### Runtime Configuration
 - `PORT` - Server port (default: 8080)
 - `FLASK_APP` - Flask application entry point
 - `FLASK_ENV` - Flask environment (development/production)
+
+### Google Cloud Configuration
 - `GOOGLE_CLOUD_PROJECT` - GCP project ID
+- `GOOGLE_APPLICATION_CREDENTIALS` - Path to service account key file
+- `GCS_BUCKET_NAME` - Google Cloud Storage bucket name for images
+
+### Database Configuration
+- `DATABASE_URL` - Database connection string (SQLite or PostgreSQL)
+
+**Note**: When using Terraform deployment, these variables are automatically configured!
 
 ## Contributing
 

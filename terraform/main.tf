@@ -29,6 +29,26 @@ resource "google_project_service" "cloud_build_api" {
   service = "cloudbuild.googleapis.com"
 }
 
+resource "google_project_service" "storage_api" {
+  project = var.project_id
+  service = "storage.googleapis.com"
+}
+
+resource "google_project_service" "vertex_ai_api" {
+  project = var.project_id
+  service = "aiplatform.googleapis.com"
+}
+
+resource "google_project_service" "iam_api" {
+  project = var.project_id
+  service = "iam.googleapis.com"
+}
+
+resource "google_project_service" "secret_manager_api" {
+  project = var.project_id
+  service = "secretmanager.googleapis.com"
+}
+
 # Create Artifact Registry repository
 resource "google_artifact_registry_repository" "prelovium_repo" {
   project       = var.project_id
@@ -38,6 +58,79 @@ resource "google_artifact_registry_repository" "prelovium_repo" {
   format        = "DOCKER"
 
   depends_on = [google_project_service.artifact_registry_api]
+}
+
+# Create Google Cloud Storage bucket for images
+resource "google_storage_bucket" "prelovium_images" {
+  name          = "${var.project_id}-prelovium-images"
+  location      = var.region
+  force_destroy = true
+
+  uniform_bucket_level_access = true
+
+  cors {
+    origin          = ["*"]
+    method          = ["GET", "HEAD", "PUT", "POST", "DELETE"]
+    response_header = ["*"]
+    max_age_seconds = 3600
+  }
+
+  depends_on = [google_project_service.storage_api]
+}
+
+# Make bucket publicly readable for serving images
+resource "google_storage_bucket_iam_member" "public_access" {
+  bucket = google_storage_bucket.prelovium_images.name
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
+}
+
+# Create service account for the application
+resource "google_service_account" "prelovium_app" {
+  account_id   = "prelovium-app-sa"
+  display_name = "Prelovium Application Service Account"
+  description  = "Service account for Prelovium application to access GCS and Vertex AI"
+}
+
+# Grant permissions to the application service account
+resource "google_project_iam_member" "prelovium_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.prelovium_app.email}"
+}
+
+resource "google_project_iam_member" "prelovium_vertex_ai_user" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.prelovium_app.email}"
+}
+
+resource "google_project_iam_member" "prelovium_secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.prelovium_app.email}"
+}
+
+# Create service account key for the application
+resource "google_service_account_key" "prelovium_app_key" {
+  service_account_id = google_service_account.prelovium_app.name
+}
+
+# Create Secret Manager secret for the service account key
+resource "google_secret_manager_secret" "prelovium_app_key" {
+  secret_id = "prelovium-app-key"
+  
+  replication {
+    auto {}
+  }
+  
+  depends_on = [google_project_service.secret_manager_api]
+}
+
+# Store the service account key in Secret Manager
+resource "google_secret_manager_secret_version" "prelovium_app_key" {
+  secret      = google_secret_manager_secret.prelovium_app_key.id
+  secret_data = base64decode(google_service_account_key.prelovium_app_key.private_key)
 }
 
 # Cloud Run service
@@ -73,6 +166,21 @@ resource "google_cloud_run_v2_service" "prelovium" {
         name  = "GOOGLE_CLOUD_PROJECT"
         value = var.project_id
       }
+      
+      env {
+        name  = "GCS_BUCKET_NAME"
+        value = google_storage_bucket.prelovium_images.name
+      }
+      
+      env {
+        name  = "DATABASE_URL"
+        value = var.database_url
+      }
+      
+      env {
+        name  = "GOOGLE_APPLICATION_CREDENTIALS"
+        value = "/etc/secrets/gcp-key.json"
+      }
 
       resources {
         limits = {
@@ -80,11 +188,34 @@ resource "google_cloud_run_v2_service" "prelovium" {
           memory = "4Gi"
         }
       }
+      
+      volume_mounts {
+        name       = "gcp-key"
+        mount_path = "/etc/secrets"
+      }
+    }
+    
+    volumes {
+      name = "gcp-key"
+      secret {
+        secret_name = google_secret_manager_secret.prelovium_app_key.secret_id
+        items {
+          key  = "1"
+          path = "gcp-key.json"
+        }
+      }
     }
 
     scaling {
       min_instance_count = 0
       max_instance_count = 10
+    }
+    
+    service_account = google_service_account.prelovium_app.email
+    
+    # Allow the service account to access Secret Manager
+    annotations = {
+      "run.googleapis.com/execution-environment" = "gen2"
     }
   }
 
