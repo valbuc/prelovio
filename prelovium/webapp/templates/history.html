@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">Upload History</h2>
+        <p class="text-gray-600">
+            View all your previous image uploads and generated ads.
+        </p>
+        <div class="mt-4">
+            <a href="{{ url_for('index') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                ← Back to Upload
+            </a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    {% if uploads %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for upload in uploads %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <!-- Image Grid -->
+            <div class="grid grid-cols-3 gap-1 p-2">
+                <div class="aspect-square">
+                    <img src="{{ upload.processed_primary_url }}" alt="Primary image" class="w-full h-full object-cover rounded">
+                </div>
+                <div class="aspect-square">
+                    <img src="{{ upload.processed_secondary_url }}" alt="Secondary image" class="w-full h-full object-cover rounded">
+                </div>
+                <div class="aspect-square">
+                    <img src="{{ upload.processed_label_url }}" alt="Label image" class="w-full h-full object-cover rounded">
+                </div>
+            </div>
+            
+            <!-- Upload Details -->
+            <div class="p-4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2 truncate">{{ upload.title }}</h3>
+                
+                <div class="flex items-center justify-between mb-3">
+                    <span class="inline-block bg-blue-100 text-blue-800 text-sm font-semibold px-2 py-1 rounded">
+                        €{{ upload.price }}
+                    </span>
+                    <span class="text-sm text-gray-500">
+                        {{ upload.created_at[:10] }}
+                    </span>
+                </div>
+                
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Size:</span>
+                        <span class="font-medium">{{ upload.size }}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Brand:</span>
+                        <span class="font-medium">{{ upload.brand }}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Categories:</span>
+                        <span class="font-medium">{{ upload.categories|join(', ') }}</span>
+                    </div>
+                </div>
+                
+                <p class="text-gray-700 text-sm mt-3 line-clamp-2">
+                    {{ upload.description }}
+                </p>
+                
+                <!-- View Details Button -->
+                <button 
+                    class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded transition-colors view-details-btn"
+                    data-upload-id="{{ upload.upload_id }}"
+                >
+                    View Details
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No uploads yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by uploading your first image.</p>
+        <div class="mt-6">
+            <a href="{{ url_for('index') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                Upload Images
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal for viewing upload details -->
+<div id="uploadModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900" id="modalTitle">Upload Details</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="modalContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('uploadModal');
+    const closeModal = document.getElementById('closeModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+    
+    // Handle view details buttons
+    document.querySelectorAll('.view-details-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const uploadId = this.dataset.uploadId;
+            
+            try {
+                const response = await fetch(`/api/uploads/${uploadId}`);
+                const upload = await response.json();
+                
+                if (response.ok) {
+                    modalTitle.textContent = upload.title;
+                    modalContent.innerHTML = renderUploadDetails(upload);
+                    modal.classList.remove('hidden');
+                } else {
+                    alert('Failed to load upload details');
+                }
+            } catch (error) {
+                console.error('Error loading upload details:', error);
+                alert('Failed to load upload details');
+            }
+        });
+    });
+    
+    // Close modal
+    closeModal.addEventListener('click', function() {
+        modal.classList.add('hidden');
+    });
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+    
+    function renderUploadDetails(upload) {
+        return `
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Images -->
+                <div class="space-y-4">
+                    <h4 class="text-lg font-semibold text-gray-900">Processed Images</h4>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Primary Image</h5>
+                            <img src="${upload.processed_primary_url}" alt="Primary" class="w-full h-48 object-cover rounded-lg">
+                        </div>
+                        <div>
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Secondary Image</h5>
+                            <img src="${upload.processed_secondary_url}" alt="Secondary" class="w-full h-48 object-cover rounded-lg">
+                        </div>
+                        <div>
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Label Image</h5>
+                            <img src="${upload.processed_label_url}" alt="Label" class="w-full h-48 object-cover rounded-lg">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Details -->
+                <div class="space-y-4">
+                    <h4 class="text-lg font-semibold text-gray-900">Product Details</h4>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Price:</span>
+                                <span class="ml-2 text-lg font-bold text-blue-600">€${upload.price}</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Size:</span>
+                                <span class="ml-2">${upload.size}</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Brand:</span>
+                                <span class="ml-2">${upload.brand}</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Categories:</span>
+                                <span class="ml-2">${upload.categories.join(', ')}</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Colors:</span>
+                                <div class="ml-2 flex flex-wrap gap-2 mt-1">
+                                    ${upload.colors.map(color => `<span class="inline-block w-4 h-4 rounded-full border border-gray-300" style="background:${color}" title="${color}"></span>`).join('')}
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Materials:</span>
+                                <span class="ml-2">${upload.materials.join(', ')}</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Upload Date:</span>
+                                <span class="ml-2">${new Date(upload.created_at).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Description</h5>
+                        <p class="text-gray-700 bg-gray-50 p-3 rounded-lg">${upload.description}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+
+<style>
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
+{% endblock %}

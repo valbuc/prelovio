@@ -18,3 +18,24 @@ output "github_actions_service_account_key" {
   value       = google_service_account_key.github_actions_key.private_key
   sensitive   = true
 }
+
+output "gcs_bucket_name" {
+  description = "Name of the Google Cloud Storage bucket for images"
+  value       = google_storage_bucket.prelovium_images.name
+}
+
+output "gcs_bucket_url" {
+  description = "URL of the Google Cloud Storage bucket"
+  value       = google_storage_bucket.prelovium_images.url
+}
+
+output "prelovium_app_service_account_email" {
+  description = "Email of the Prelovium application service account"
+  value       = google_service_account.prelovium_app.email
+}
+
+output "prelovium_app_service_account_key" {
+  description = "Base64 encoded service account key for the Prelovium application"
+  value       = google_service_account_key.prelovium_app_key.private_key
+  sensitive   = true
+}

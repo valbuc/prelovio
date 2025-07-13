@@ -1,3 +1,7 @@
 project_id  = "prelovium"
 region      = "europe-west1"
 environment = "prod"
+
+# Database URL - for production, use Cloud SQL PostgreSQL
+# database_url = "postgresql://user:password@host:port/database"
+database_url = "sqlite:///prelovium.db"

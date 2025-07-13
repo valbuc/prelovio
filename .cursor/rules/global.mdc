@@ -1,0 +1,41 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Global Engineering Best Practices
+
+## Coding Principles
+
+- **Follow DRY (Don't Repeat Yourself):** Avoid code duplication by abstracting reusable logic into functions, modules, or services.
+- **Apply SOLID Principles:**
+  - **Single Responsibility:** Each module/class/function should have one clear purpose.
+  - **Open/Closed:** Code should be open for extension but closed for modification.
+  - **Liskov Substitution:** Subtypes must be substitutable for their base types.
+  - **Interface Segregation:** Prefer small, specific interfaces over large, general ones.
+  - **Dependency Inversion:** Depend on abstractions, not concrete implementations.
+- **KISS (Keep It Simple, Stupid):** Strive for simplicity in design and implementation.
+- **YAGNI (You Aren't Gonna Need It):** Only implement what is necessary for current requirements.
+
+## Microservices Architecture
+
+- **Whenever feasible, implement new features or tasks as independent microservices.**
+  - Ensure each service is loosely coupled, highly cohesive, and independently deployable.
+  - Use clear, versioned APIs for communication between services.
+  - Each microservice should have its own data storage and build pipeline.
+
+## Infrastructure as Code
+
+- **All changes to cloud infrastructure must be implemented as code using Terraform.**
+  - Define, configure, and manage infrastructure resources in version-controlled Terraform files.
+  - Avoid manual changes (ClickOps) to cloud environments—use `terraform plan` and `terraform apply` for all modifications.
+  - Document infrastructure changes in code reviews and commit messages.
+
+## Additional Recommended Global Rules
+
+- **Error Handling:** Always raise and log errors explicitly; avoid silent failures.
+- **Code Reviews:** All code must be peer-reviewed before merging.
+- **Testing:** Write and maintain automated tests for all new features and bug fixes.
+- **Documentation:** Update relevant documentation (README, API docs, infrastructure docs) with every significant change.
+- **Security:** Follow secure coding practices and regularly review dependencies for vulnerabilities.
+- **Minimalism:** Make the smallest change necessary to achieve the goal; avoid unnecessary refactoring unless required by the task.

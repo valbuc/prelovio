@@ -2,9 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from transformers import pipeline
-import matplotlib.pyplot as plt
 import tempfile
-import os
 
 BLUR_AMOUNT = 32  # blor of shadow
 OFFSET_X = -25  # Horizontal offset for the shadow
@@ -157,15 +155,6 @@ def add_vignette(image, exponent=2, scale=0.1):
     mask = mask.astype(np.uint8)
     mask = cv2.merge([mask, mask, mask])
     return cv2.subtract(image, (1 - mask))
-
-
-def display(image):
-    fig, ax = plt.subplots()
-    ax.imshow(image)
-    ax.axis("off")
-    fig.patch.set_visible(False)
-    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    plt.show()
 
 
 def prettify(path: str):

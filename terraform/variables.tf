@@ -14,3 +14,9 @@ variable "environment" {
   type        = string
   default     = "prod"
 }
+
+variable "database_url" {
+  description = "Database URL for the application"
+  type        = string
+  default     = "sqlite:///prelovium.db"
+}
