@@ -13,7 +13,7 @@ GREEN=\033[0;32m
 YELLOW=\033[1;33m
 NC=\033[0m # No Color
 
-.PHONY: help install test build run deploy-local deploy terraform-init terraform-plan terraform-apply clean
+.PHONY: help install test build run deploy-local deploy terraform-init terraform-plan terraform-apply terraform clean
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -85,7 +85,13 @@ terraform-plan: ## Plan Terraform changes
 
 terraform-apply: ## Apply Terraform changes
 	@echo "$(GREEN)Applying Terraform changes...$(NC)"
-	cd terraform && terraform apply
+	cd terraform && terraform apply -auto-approve
+
+terraform: ## Run complete Terraform workflow (init, plan, apply)
+	@echo "$(GREEN)Running complete Terraform workflow...$(NC)"
+	cd terraform && terraform init
+	cd terraform && terraform plan
+	cd terraform && terraform apply -auto-approve
 
 terraform-destroy: ## Destroy Terraform resources
 	@echo "$(RED)Destroying Terraform resources...$(NC)"
@@ -113,7 +119,7 @@ setup-gcp: ## Set up GCP project for deployment
 
 clean: ## Clean up local Docker images and containers
 	@echo "$(GREEN)Cleaning up Docker resources...$(NC)"
-	docker system prune -f
+	docker system prune -a -f
 	docker images | grep prelovium | awk '{print $$3}' | xargs -r docker rmi || true
 
 dev: ## Start development environment

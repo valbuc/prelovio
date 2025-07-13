@@ -4,7 +4,7 @@ FROM --platform=linux/amd64 python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies in a single layer
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -12,19 +12,21 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy all project files
 COPY . .
 
-# Install poetry
-RUN pip install poetry
+# Install poetry first
+RUN pip install --no-cache-dir poetry
 
 # Configure poetry to not create a virtual environment
 RUN poetry config virtualenvs.create false
 
 # Install dependencies
-RUN poetry install
+RUN poetry lock
+RUN poetry install --only main --no-interaction --no-ansi
 
 # Create necessary directories
 RUN mkdir -p prelovium/webapp/temp/uploads

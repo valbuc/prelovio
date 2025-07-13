@@ -130,7 +130,7 @@ resource "google_secret_manager_secret" "prelovium_app_key" {
 # Store the service account key in Secret Manager
 resource "google_secret_manager_secret_version" "prelovium_app_key" {
   secret      = google_secret_manager_secret.prelovium_app_key.id
-  secret_data = base64decode(google_service_account_key.prelovium_app_key.private_key)
+  secret_data = google_service_account_key.prelovium_app_key.private_key
 }
 
 # Cloud Run service
@@ -145,11 +145,6 @@ resource "google_cloud_run_v2_service" "prelovium" {
       
       ports {
         container_port = 8080
-      }
-
-      env {
-        name  = "PORT"
-        value = "8080"
       }
       
       env {
@@ -198,10 +193,10 @@ resource "google_cloud_run_v2_service" "prelovium" {
     volumes {
       name = "gcp-key"
       secret {
-        secret_name = google_secret_manager_secret.prelovium_app_key.secret_id
+        secret = google_secret_manager_secret.prelovium_app_key.secret_id
         items {
-          key  = "1"
-          path = "gcp-key.json"
+          version = "latest"
+          path    = "gcp-key.json"
         }
       }
     }
@@ -232,9 +227,9 @@ resource "google_cloud_run_v2_service" "prelovium" {
 
 # Make service publicly accessible
 resource "google_cloud_run_v2_service_iam_policy" "prelovium_public" {
+  name     = google_cloud_run_v2_service.prelovium.name
   location = google_cloud_run_v2_service.prelovium.location
   project  = google_cloud_run_v2_service.prelovium.project
-  service  = google_cloud_run_v2_service.prelovium.name
 
   policy_data = data.google_iam_policy.public_access.policy_data
 }
