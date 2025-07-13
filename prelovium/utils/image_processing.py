@@ -50,18 +50,22 @@ def trim_and_pad_image(image, padding_ratio=0.1, vertical_ratio=1.333):
     # expand to target ratio
     if padded_height < padded_width * vertical_ratio:
         target_height = int(padded_width * vertical_ratio)
-        additional_padding_height = (target_height - padded_height) // 2
         target_width = padded_width
-        additional_padding_width = 0
     elif padded_height > padded_width * vertical_ratio:
         target_width = int(padded_height / vertical_ratio)
-        additional_padding_width = (target_width - padded_width) // 2
         target_height = padded_height
-        additional_padding_height = 0
+    else:
+        # Image already has the correct ratio
+        target_width = padded_width
+        target_height = padded_height
+    
     final_image = Image.new("RGBA", (target_width, target_height), (0, 0, 0, 0))
-    final_image.paste(
-        padded_image, (additional_padding_width, additional_padding_height)
-    )
+    
+    # Calculate precise centering using integer division for perfect centering
+    center_x = (target_width - padded_width) // 2
+    center_y = (target_height - padded_height) // 2
+    
+    final_image.paste(padded_image, (center_x, center_y))
 
     # Save the result
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
