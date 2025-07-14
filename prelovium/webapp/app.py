@@ -14,8 +14,10 @@ from prelovium.utils.gcs_storage import GCSStorage
 app = Flask(__name__)
 
 # Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///prelovium.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+    "DATABASE_URL", "sqlite:///prelovium.db"
+)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize database
 db.init_app(app)
@@ -40,8 +42,15 @@ EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "examples")
 with app.app_context():
     db.create_all()
 
+
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/health")
+def health_check():
+    """Health check endpoint for Cloud Run startup probe."""
+    return jsonify({"status": "healthy"}), 200
 
 
 @app.route("/")
@@ -88,54 +97,65 @@ def process_images():
 
         # Save processed images locally for metadata generation
         save_image(os.path.join(upload_folder, "primary_processed.jpeg"), primary_image)
-        save_image(os.path.join(upload_folder, "secondary_processed.jpeg"), secondary_image)
+        save_image(
+            os.path.join(upload_folder, "secondary_processed.jpeg"), secondary_image
+        )
         save_image(os.path.join(upload_folder, "label_processed.jpeg"), label_image)
 
         # Generate metadata
         metadata = generate_metadata(upload_folder)
-        
+
         try:
             # Upload to Google Cloud Storage
             original_files = {
-                'primary': primary_path,
-                'secondary': secondary_path,
-                'label': label_path
+                "primary": primary_path,
+                "secondary": secondary_path,
+                "label": label_path,
             }
             processed_images = {
-                'primary': primary_image,
-                'secondary': secondary_image,
-                'label': label_image
+                "primary": primary_image,
+                "secondary": secondary_image,
+                "label": label_image,
             }
-            
-            original_urls, processed_urls = gcs.upload_images_for_upload(upload_id, original_files, processed_images)
-            
+
+            original_urls, processed_urls = gcs.upload_images_for_upload(
+                upload_id, original_files, processed_images
+            )
+
             # Save to database
-            upload_record = Upload.from_metadata(upload_id, original_urls, processed_urls, metadata)
+            upload_record = Upload.from_metadata(
+                upload_id, original_urls, processed_urls, metadata
+            )
             db.session.add(upload_record)
             db.session.commit()
-            
+
             # Clean up local files
             import shutil
+
             shutil.rmtree(upload_folder)
-            
-            return jsonify({
-                "primary": processed_urls['primary'],
-                "secondary": processed_urls['secondary'],
-                "label": processed_urls['label'],
-                "metadata": metadata,
-                "upload_id": upload_id
-            })
-            
+
+            return jsonify(
+                {
+                    "primary": processed_urls["primary"],
+                    "secondary": processed_urls["secondary"],
+                    "label": processed_urls["label"],
+                    "metadata": metadata,
+                    "upload_id": upload_id,
+                }
+            )
+
         except Exception as e:
             print(f"Error processing example: {e}")
             # Fallback to local serving
-            return jsonify({
-                "primary": f"/uploads/{upload_id}/primary_processed.jpeg",
-                "secondary": f"/uploads/{upload_id}/secondary_processed.jpeg",
-                "label": f"/uploads/{upload_id}/label_processed.jpeg",
-                "metadata": metadata,
-                "upload_id": upload_id
-            })
+            return jsonify(
+                {
+                    "primary": f"/uploads/{upload_id}/primary_processed.jpeg",
+                    "secondary": f"/uploads/{upload_id}/secondary_processed.jpeg",
+                    "label": f"/uploads/{upload_id}/label_processed.jpeg",
+                    "metadata": metadata,
+                    "upload_id": upload_id,
+                }
+            )
 
     # Handle file upload request
     if (
@@ -180,47 +200,57 @@ def process_images():
 
         # Save processed images locally for metadata generation
         save_image(os.path.join(upload_folder, "primary_processed.jpeg"), primary_image)
-        save_image(os.path.join(upload_folder, "secondary_processed.jpeg"), secondary_image)
+        save_image(
+            os.path.join(upload_folder, "secondary_processed.jpeg"), secondary_image
+        )
         save_image(os.path.join(upload_folder, "label_processed.jpeg"), label_image)
 
         # Generate metadata
         metadata = generate_metadata(upload_folder)
-        
+
         # Upload to Google Cloud Storage
         original_files = {
-            'primary': primary_path,
-            'secondary': secondary_path,
-            'label': label_path
+            "primary": primary_path,
+            "secondary": secondary_path,
+            "label": label_path,
         }
         processed_images = {
-            'primary': primary_image,
-            'secondary': secondary_image,
-            'label': label_image
+            "primary": primary_image,
+            "secondary": secondary_image,
+            "label": label_image,
         }
-        
-        original_urls, processed_urls = gcs.upload_images_for_upload(upload_id, original_files, processed_images)
-        
+
+        original_urls, processed_urls = gcs.upload_images_for_upload(
+            upload_id, original_files, processed_images
+        )
+
         # Save to database
-        upload_record = Upload.from_metadata(upload_id, original_urls, processed_urls, metadata)
+        upload_record = Upload.from_metadata(
+            upload_id, original_urls, processed_urls, metadata
+        )
         db.session.add(upload_record)
         db.session.commit()
-        
+
         # Clean up local files
         import shutil
+
         shutil.rmtree(upload_folder)
-        
-        return jsonify({
-            "primary": processed_urls['primary'],
-            "secondary": processed_urls['secondary'],
-            "label": processed_urls['label'],
-            "metadata": metadata,
-            "upload_id": upload_id
-        })
-        
+
+        return jsonify(
+            {
+                "primary": processed_urls["primary"],
+                "secondary": processed_urls["secondary"],
+                "label": processed_urls["label"],
+                "metadata": metadata,
+                "upload_id": upload_id,
+            }
+        )
+
     except Exception as e:
         print(f"Error processing upload: {e}")
         # Clean up local files on error
         import shutil
+
         if os.path.exists(upload_folder):
             shutil.rmtree(upload_folder)
         return jsonify({"error": "Failed to process images"}), 500
@@ -238,11 +268,13 @@ def history():
         # Get all uploads ordered by most recent first
         uploads = Upload.query.order_by(Upload.created_at.desc()).all()
         uploads_data = [upload.to_dict() for upload in uploads]
-        
+
         return render_template("history.html", uploads=uploads_data)
     except Exception as e:
         print(f"Error loading history: {e}")
-        return render_template("history.html", uploads=[], error="Failed to load upload history")
+        return render_template(
+            "history.html", uploads=[], error="Failed to load upload history"
+        )
 
 
 @app.route("/api/uploads")
@@ -264,7 +296,7 @@ def api_upload_detail(upload_id):
         upload = Upload.query.filter_by(upload_id=upload_id).first()
         if not upload:
             return jsonify({"error": "Upload not found"}), 404
-        
+
         return jsonify(upload.to_dict())
     except Exception as e:
         print(f"Error loading upload {upload_id}: {e}")

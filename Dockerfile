@@ -28,6 +28,9 @@ RUN poetry config virtualenvs.create false
 RUN poetry lock
 RUN poetry install --only main --no-interaction --no-ansi
 
+# Pre-download the model during build time
+RUN python -c "from transformers import pipeline; pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)"
+
 # Create necessary directories
 RUN mkdir -p prelovium/webapp/temp/uploads
 
