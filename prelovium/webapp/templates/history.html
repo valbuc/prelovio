@@ -5,12 +5,30 @@
     <div class="text-center mb-8">
         <h2 class="text-3xl font-bold text-gray-900 mb-4">Upload History</h2>
         <p class="text-gray-600">
-            View all your previous image uploads and generated ads.
+            Manage all your uploaded items and their status.
         </p>
-        <div class="mt-4">
+        <div class="mt-4 flex items-center justify-center gap-4">
             <a href="{{ url_for('index') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 ← Back to Upload
             </a>
+        </div>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <label class="text-sm font-medium text-gray-700">Filter by Status:</label>
+            <select id="statusFilter" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="all" {% if current_filter == 'all' %}selected{% endif %}>All Items</option>
+                <option value="in_review" {% if current_filter == 'in_review' %}selected{% endif %}>In Review</option>
+                <option value="published" {% if current_filter == 'published' %}selected{% endif %}>Published</option>
+                <option value="hidden" {% if current_filter == 'hidden' %}selected{% endif %}>Hidden</option>
+                <option value="deleted" {% if current_filter == 'deleted' %}selected{% endif %}>Deleted</option>
+                <option value="sold" {% if current_filter == 'sold' %}selected{% endif %}>Sold</option>
+            </select>
+        </div>
+        <div class="text-sm text-gray-500">
+            {{ uploads|length }} items
         </div>
     </div>
 
@@ -24,6 +42,18 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for upload in uploads %}
         <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <!-- Status Badge -->
+            <div class="p-3 pb-2">
+                <div class="flex justify-between items-center">
+                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full status-badge status-{{ upload.status }}">
+                        {{ upload.status.replace('_', ' ').title() }}
+                    </span>
+                    <span class="text-xs text-gray-500">
+                        {{ upload.created_at[:10] }}
+                    </span>
+                </div>
+            </div>
+
             <!-- Image Grid -->
             <div class="grid grid-cols-3 gap-1 p-2">
                 <div class="aspect-square">
@@ -46,16 +76,11 @@
                         €{{ upload.price }}
                     </span>
                     <span class="text-sm text-gray-500">
-                        {{ upload.created_at[:10] }}
+                        {{ upload.size }}
                     </span>
                 </div>
                 
                 <div class="space-y-2 text-sm">
-                    <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Size:</span>
-                        <span class="font-medium">{{ upload.size }}</span>
-                    </div>
-                    
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">Brand:</span>
                         <span class="font-medium">{{ upload.brand }}</span>
@@ -71,9 +96,43 @@
                     {{ upload.description }}
                 </p>
                 
+                <!-- Action Buttons -->
+                <div class="mt-4 space-y-2">
+                    <div class="flex gap-2">
+                        <button class="flex-1 text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 status-action-btn" 
+                                data-upload-id="{{ upload.upload_id }}" 
+                                data-status="published">
+                            Publish
+                        </button>
+                        <button class="flex-1 text-xs px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 status-action-btn" 
+                                data-upload-id="{{ upload.upload_id }}" 
+                                data-status="hidden">
+                            Hide
+                        </button>
+                        <button class="flex-1 text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 status-action-btn" 
+                                data-upload-id="{{ upload.upload_id }}" 
+                                data-status="deleted">
+                            Delete
+                        </button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="flex-1 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 status-action-btn" 
+                                data-upload-id="{{ upload.upload_id }}" 
+                                data-status="sold"
+                                {% if upload.status != 'published' %}disabled class="opacity-50 cursor-not-allowed"{% endif %}>
+                            Sell
+                        </button>
+                        <button class="flex-1 text-xs px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 status-action-btn" 
+                                data-upload-id="{{ upload.upload_id }}" 
+                                data-status="in_review">
+                            Review
+                        </button>
+                    </div>
+                </div>
+                
                 <!-- View Details Button -->
                 <button 
-                    class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded transition-colors view-details-btn"
+                    class="mt-3 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded transition-colors view-details-btn"
                     data-upload-id="{{ upload.upload_id }}"
                 >
                     View Details
@@ -87,11 +146,17 @@
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No uploads yet</h3>
-        <p class="mt-1 text-sm text-gray-500">Get started by uploading your first image.</p>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No uploads found</h3>
+        <p class="mt-1 text-sm text-gray-500">
+            {% if current_filter != 'all' %}
+                No items found with the selected filter. Try changing the filter or upload new items.
+            {% else %}
+                Get started by uploading your first item.
+            {% endif %}
+        </p>
         <div class="mt-6">
             <a href="{{ url_for('index') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                Upload Images
+                Upload Items
             </a>
         </div>
     </div>
@@ -124,6 +189,67 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeModal = document.getElementById('closeModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalContent = document.getElementById('modalContent');
+    const statusFilter = document.getElementById('statusFilter');
+    
+    // Handle status filter change
+    statusFilter.addEventListener('change', function() {
+        const selectedStatus = this.value;
+        const url = new URL(window.location);
+        
+        if (selectedStatus === 'all') {
+            url.searchParams.delete('status');
+        } else {
+            url.searchParams.set('status', selectedStatus);
+        }
+        
+        window.location.href = url.toString();
+    });
+    
+    // Handle status action buttons
+    document.querySelectorAll('.status-action-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const uploadId = this.dataset.uploadId;
+            const newStatus = this.dataset.status;
+            
+            // Disable button during request
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.textContent = 'Updating...';
+            
+            try {
+                const response = await fetch(`/api/uploads/${uploadId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        status: newStatus
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Show success message
+                    showNotification(`Item status updated to "${newStatus.replace('_', ' ')}"`, 'success');
+                    
+                    // Refresh the page to show updated status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || 'Failed to update status');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                // Re-enable button
+                this.disabled = false;
+                this.textContent = originalText;
+            }
+        });
+    });
     
     // Handle view details buttons
     document.querySelectorAll('.view-details-btn').forEach(button => {
@@ -139,11 +265,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     modalContent.innerHTML = renderUploadDetails(upload);
                     modal.classList.remove('hidden');
                 } else {
-                    alert('Failed to load upload details');
+                    throw new Error('Failed to load upload details');
                 }
             } catch (error) {
                 console.error('Error loading upload details:', error);
-                alert('Failed to load upload details');
+                showNotification('Failed to load upload details', 'error');
             }
         });
     });
@@ -161,6 +287,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function renderUploadDetails(upload) {
+        const statusColors = {
+            'in_review': 'bg-yellow-100 text-yellow-800',
+            'published': 'bg-green-100 text-green-800',
+            'hidden': 'bg-gray-100 text-gray-800',
+            'deleted': 'bg-red-100 text-red-800',
+            'sold': 'bg-blue-100 text-blue-800'
+        };
+        
         return `
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Images -->
@@ -187,6 +321,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h4 class="text-lg font-semibold text-gray-900">Product Details</h4>
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-sm font-medium text-gray-600">Status:</span>
+                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${statusColors[upload.status]}">
+                                    ${upload.status.replace('_', ' ').toUpperCase()}
+                                </span>
+                            </div>
                             <div>
                                 <span class="text-sm font-medium text-gray-600">Price:</span>
                                 <span class="ml-2 text-lg font-bold text-blue-600">€${upload.price}</span>
@@ -214,8 +354,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <span class="ml-2">${upload.materials.join(', ')}</span>
                             </div>
                             <div>
-                                <span class="text-sm font-medium text-gray-600">Upload Date:</span>
+                                <span class="text-sm font-medium text-gray-600">Created:</span>
                                 <span class="ml-2">${new Date(upload.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Updated:</span>
+                                <span class="ml-2">${new Date(upload.updated_at).toLocaleDateString()}</span>
                             </div>
                         </div>
                     </div>
@@ -228,6 +372,21 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
     }
+    
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        const bgColor = type === 'error' ? 'bg-red-500' : (type === 'success' ? 'bg-green-500' : 'bg-blue-500');
+        
+        notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
 });
 </script>
 
@@ -237,6 +396,42 @@ document.addEventListener('DOMContentLoaded', function() {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-in_review {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-published {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.status-hidden {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.status-deleted {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.status-sold {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.status-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 </style>
 {% endblock %}

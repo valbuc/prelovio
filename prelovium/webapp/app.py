@@ -8,7 +8,7 @@ from datetime import datetime
 
 from prelovium.utils.image_processing import prettify, save_image, load_image
 from prelovium.utils.metadata import generate_metadata
-from prelovium.utils.database import db, Upload
+from prelovium.utils.database import db, Upload, migrate_existing_uploads
 from prelovium.utils.gcs_storage import GCSStorage
 
 app = Flask(__name__)
@@ -38,9 +38,10 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
 EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "examples")
 
-# Create database tables
+# Create database tables and run migrations
 with app.app_context():
     db.create_all()
+    migrate_existing_uploads()  # Run migration to add status field to existing uploads
 
 
 def allowed_file(filename):
@@ -265,15 +266,23 @@ def uploaded_file(filename):
 def history():
     """Display all previous uploads."""
     try:
+        # Get status filter from query parameter
+        status_filter = request.args.get('status', 'all')
+        
+        # Build query based on status filter
+        query = Upload.query
+        if status_filter != 'all' and status_filter in Upload.VALID_STATUSES:
+            query = query.filter(Upload.status == status_filter)
+        
         # Get all uploads ordered by most recent first
-        uploads = Upload.query.order_by(Upload.created_at.desc()).all()
+        uploads = query.order_by(Upload.created_at.desc()).all()
         uploads_data = [upload.to_dict() for upload in uploads]
 
-        return render_template("history.html", uploads=uploads_data)
+        return render_template("history.html", uploads=uploads_data, current_filter=status_filter)
     except Exception as e:
         print(f"Error loading history: {e}")
         return render_template(
-            "history.html", uploads=[], error="Failed to load upload history"
+            "history.html", uploads=[], error="Failed to load upload history", current_filter='all'
         )
 
 
@@ -281,7 +290,15 @@ def history():
 def api_uploads():
     """API endpoint to get all uploads as JSON."""
     try:
-        uploads = Upload.query.order_by(Upload.created_at.desc()).all()
+        # Get status filter from query parameter
+        status_filter = request.args.get('status', 'all')
+        
+        # Build query based on status filter
+        query = Upload.query
+        if status_filter != 'all' and status_filter in Upload.VALID_STATUSES:
+            query = query.filter(Upload.status == status_filter)
+        
+        uploads = query.order_by(Upload.created_at.desc()).all()
         uploads_data = [upload.to_dict() for upload in uploads]
         return jsonify(uploads_data)
     except Exception as e:
@@ -301,6 +318,70 @@ def api_upload_detail(upload_id):
     except Exception as e:
         print(f"Error loading upload {upload_id}: {e}")
         return jsonify({"error": "Failed to load upload"}), 500
+
+
+@app.route("/api/uploads/<upload_id>/status", methods=["PUT"])
+def api_update_upload_status(upload_id):
+    """API endpoint to update the status of a specific upload."""
+    try:
+        upload = Upload.query.filter_by(upload_id=upload_id).first()
+        if not upload:
+            return jsonify({"error": "Upload not found"}), 404
+
+        data = request.get_json()
+        if not data or 'status' not in data:
+            return jsonify({"error": "Status is required"}), 400
+
+        new_status = data['status']
+        
+        # Validate and update status
+        try:
+            upload.update_status(new_status)
+            db.session.commit()
+            return jsonify({"message": "Status updated successfully", "upload": upload.to_dict()})
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+            
+    except Exception as e:
+        print(f"Error updating upload {upload_id}: {e}")
+        return jsonify({"error": "Failed to update upload status"}), 500
+
+
+@app.route("/api/statuses")
+def api_get_statuses():
+    """API endpoint to get all valid statuses."""
+    try:
+        statuses = [
+            {
+                'value': status,
+                'label': Upload().get_status_display() if status == 'in_review' else status.replace('_', ' ').title(),
+                'color': Upload().get_status_color() if status == 'in_review' else 'gray'
+            }
+            for status in Upload.VALID_STATUSES
+        ]
+        
+        # Fix the status display labels and colors
+        status_info = {
+            'in_review': {'label': 'In Review', 'color': 'yellow'},
+            'published': {'label': 'Published', 'color': 'green'},
+            'hidden': {'label': 'Hidden', 'color': 'gray'},
+            'deleted': {'label': 'Deleted', 'color': 'red'},
+            'sold': {'label': 'Sold', 'color': 'blue'}
+        }
+        
+        statuses = [
+            {
+                'value': status,
+                'label': status_info[status]['label'],
+                'color': status_info[status]['color']
+            }
+            for status in Upload.VALID_STATUSES
+        ]
+        
+        return jsonify(statuses)
+    except Exception as e:
+        print(f"Error loading statuses: {e}")
+        return jsonify({"error": "Failed to load statuses"}), 500
 
 
 if __name__ == "__main__":
