@@ -76,6 +76,12 @@ class Upload(db.Model):
     
     # Valid statuses
     VALID_STATUSES = ['in_review', 'published', 'hidden', 'deleted', 'sold']
+
+    def __init__(self, **kwargs):
+        """Initialize Upload with default status if not provided."""
+        if 'status' not in kwargs:
+            kwargs['status'] = 'in_review'
+        super().__init__(**kwargs)
     
     def __repr__(self):
         return f'<Upload {self.upload_id}>'
