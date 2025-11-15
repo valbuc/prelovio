@@ -1,6 +1,12 @@
 # Prelovium
 
-A web application for image processing and analysis using Flask and OpenCV, with database storage and Google Cloud Storage integration.
+A web app to solve the problem that 95% of second-hand stores don't have an online presence.
+This app allows them to upload their inventory with as little work as possible: By taking 1-3 photos of each item.
+Future features could include uploading items to popular second-hand platforms (such as Vinted), inventory tracking, automatic assigning of discounts, social media content generation, etc.
+
+https://github.com/user-attachments/assets/927db006-13bd-4140-a19c-da60ba807dc6
+
+Try it out here (server will need ~2 min to start up): https://prelovium-847555285391.europe-west1.run.app
 
 ## Features
 
